@@ -19,7 +19,7 @@ services:
       GOTRUE_API_HOST: "0.0.0.0"
       GOTRUE_API_PORT: "9999"
       GOTRUE_DB_DRIVER: "postgres"
-      GOTRUE_DB_DATABASE_URL: "postgres://postgres:StrongPassword123!@db:5432/postgres?search_path=auth"
+      GOTRUE_DB_DATABASE_URL: "postgres://postgres:StrongPassword123!@db:5432/postgres?options=-csearch_path%3Dauth,public"
       GOTRUE_SITE_URL: "http://72.62.180.101:3000"
       GOTRUE_URI_ALLOW_LIST: "http://72.62.180.101:3000"
       GOTRUE_JWT_SECRET: "jwtsecret1234567890"
@@ -58,14 +58,20 @@ services:
     depends_on:
       - auth
       - rest
+      - db
     environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative.yml
-      KONG_DNS_ORDER: "LAST,A,CNAME"
+      KONG_DATABASE: "postgres"
+      KONG_PG_HOST: db
+      KONG_PG_USER: postgres
+      KONG_PG_PASSWORD: "StrongPassword123!"
+      KONG_PG_DATABASE: postgres
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
     ports:
       - "8000:8000"
-    volumes:
-      - ./kong.yml:/kong/declarative.yml:ro
     restart: unless-stopped
 
 volumes:
