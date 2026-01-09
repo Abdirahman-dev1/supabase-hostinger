@@ -53,8 +53,8 @@ services:
       SUPABASE_URL: "http://supabase-kong:8000"
       SUPABASE_ANON_KEY: "anon-temp-key"
       SUPABASE_SERVICE_KEY: "service-role-temp-key"
-    # NO PORT → Protected
     restart: unless-stopped
+    # Studio has NO public port!
 
   kong:
     image: kong:2.8
@@ -70,6 +70,23 @@ services:
       - "8000:8000"
     volumes:
       - ./declarative.yml:/usr/local/kong/declarative.yml:ro
+    restart: unless-stopped
+
+  studio-proxy:
+    image: nginx:alpine
+    container_name: studio-proxy
+    depends_on:
+      - studio
+    ports:
+      - "3000:80"
+    environment:
+      AUTH_USER: "admin"
+      AUTH_PASS: "admin:$apr1$CkdNnFX9$wVMh2cOPB8O.EtdMofSa7/"
+    volumes:
+      - ./studio-proxy.conf:/etc/nginx/conf.d/default.conf
+    command: >
+      sh -c "echo \"$AUTH_PASS\" > /etc/nginx/.htpasswd &&
+             nginx -g 'daemon off;'"
     restart: unless-stopped
 
 volumes:
