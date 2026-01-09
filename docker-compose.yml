@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: supabase/postgres:15.1.0.147
@@ -18,6 +20,7 @@ services:
     environment:
       GOTRUE_API_HOST: "0.0.0.0"
       GOTRUE_API_PORT: "9999"
+      GOTRUE_API_EXTERNAL_URL: "http://72.62.180.101:9999"
       GOTRUE_DB_DRIVER: "postgres"
       GOTRUE_DB_DATABASE_URL: "postgres://postgres:StrongPassword123!@db:5432/postgres?options=-csearch_path%3Dauth,public"
       GOTRUE_SITE_URL: "http://72.62.180.101:3000"
@@ -27,6 +30,8 @@ services:
       GOTRUE_JWT_DEFAULT_GROUP_NAME: "authenticated"
       GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
       GOTRUE_MAILER_AUTOCONFIRM: "true"
+    ports:
+      - "9999:9999"
     restart: unless-stopped
 
   rest:
@@ -39,15 +44,17 @@ services:
       PGRST_DB_SCHEMAS: "public"
       PGRST_DB_ANON_ROLE: "anon"
       PGRST_JWT_SECRET: "jwtsecret1234567890"
+    ports:
+      - "3001:3000"
     restart: unless-stopped
 
   studio:
     image: supabase/studio:latest
     container_name: supabase-studio
     environment:
-      SUPABASE_URL: "http://kong:8000"
-      SUPABASE_ANON_KEY: "anon-key-temp"
-      SUPABASE_SERVICE_KEY: "service-role-key-temp"
+      SUPABASE_URL: "http://72.62.180.101:8000"
+      SUPABASE_ANON_KEY: "anon-temp-key"
+      SUPABASE_SERVICE_KEY: "service-role-temp-key"
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -58,20 +65,14 @@ services:
     depends_on:
       - auth
       - rest
-      - db
     environment:
-      KONG_DATABASE: "postgres"
-      KONG_PG_HOST: db
-      KONG_PG_USER: postgres
-      KONG_PG_PASSWORD: "StrongPassword123!"
-      KONG_PG_DATABASE: postgres
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/declarative.yml"
+      KONG_DNS_ORDER: "LAST,A,CNAME"
     ports:
       - "8000:8000"
+    volumes:
+      - ./declarative.yml:/usr/local/kong/declarative.yml:ro
     restart: unless-stopped
 
 volumes:
