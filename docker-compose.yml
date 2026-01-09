@@ -1,0 +1,72 @@
+services:
+  db:
+    image: supabase/postgres:15.1.0.147
+    container_name: supabase-db
+    environment:
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  auth:
+    image: supabase/gotrue:v2.184.0
+    container_name: supabase-auth
+    depends_on:
+      - db
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres?search_path=auth"
+      GOTRUE_SITE_URL: "${SITE_URL}"
+      GOTRUE_URI_ALLOW_LIST: "${ADDITIONAL_REDIRECT_URLS}"
+      GOTRUE_JWT_SECRET: "${JWT_SECRET}"
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+    restart: unless-stopped
+
+  rest:
+    image: postgrest/postgrest:v12.2.8
+    container_name: supabase-rest
+    depends_on:
+      - db
+    environment:
+      PGRST_DB_URI: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres"
+      PGRST_DB_SCHEMAS: "public"
+      PGRST_DB_ANON_ROLE: "anon"
+      PGRST_JWT_SECRET: "${JWT_SECRET}"
+    restart: unless-stopped
+
+  studio:
+    image: supabase/studio:latest
+    container_name: supabase-studio
+    environment:
+      SUPABASE_URL: "http://kong:8000"
+      SUPABASE_ANON_KEY: "${ANON_KEY}"
+      SUPABASE_SERVICE_KEY: "${SERVICE_ROLE_KEY}"
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  kong:
+    image: kong:2.8
+    container_name: supabase-kong
+    depends_on:
+      - auth
+      - rest
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./kong.yml:/kong/declarative.yml:ro
+    restart: unless-stopped
+
+volumes:
+  pgdata:
