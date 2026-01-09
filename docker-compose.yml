@@ -18,9 +18,9 @@ services:
     depends_on:
       - db
     environment:
+      API_EXTERNAL_URL: "http://72.62.180.101:9999"
       GOTRUE_API_HOST: "0.0.0.0"
       GOTRUE_API_PORT: "9999"
-      GOTRUE_API_EXTERNAL_URL: "http://72.62.180.101:9999"
       GOTRUE_DB_DRIVER: "postgres"
       GOTRUE_DB_DATABASE_URL: "postgres://postgres:StrongPassword123!@db:5432/postgres?options=-csearch_path%3Dauth,public"
       GOTRUE_SITE_URL: "http://72.62.180.101:3000"
@@ -52,7 +52,7 @@ services:
     image: supabase/studio:latest
     container_name: supabase-studio
     environment:
-      SUPABASE_URL: "http://72.62.180.101:8000"
+      SUPABASE_URL: "http://kong:8000"
       SUPABASE_ANON_KEY: "anon-temp-key"
       SUPABASE_SERVICE_KEY: "service-role-temp-key"
     ports:
